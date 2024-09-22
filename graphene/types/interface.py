@@ -1,17 +1,14 @@
 from typing import TYPE_CHECKING
-
 from .base import BaseOptions, BaseType
 from .field import Field
 from .utils import yank_fields_from_attrs
-
-# For static type checking with type checker
 if TYPE_CHECKING:
-    from typing import Dict, Iterable, Type  # NOQA
+    from typing import Dict, Iterable, Type
 
 
 class InterfaceOptions(BaseOptions):
-    fields = None  # type: Dict[str, Field]
-    interfaces = ()  # type: Iterable[Type[Interface]]
+    fields = None
+    interfaces = ()
 
 
 class Interface(BaseType):
@@ -50,27 +47,17 @@ class Interface(BaseType):
     def __init_subclass_with_meta__(cls, _meta=None, interfaces=(), **options):
         if not _meta:
             _meta = InterfaceOptions(cls)
-
         fields = {}
         for base in reversed(cls.__mro__):
             fields.update(yank_fields_from_attrs(base.__dict__, _as=Field))
-
         if _meta.fields:
             _meta.fields.update(fields)
         else:
             _meta.fields = fields
-
         if not _meta.interfaces:
             _meta.interfaces = interfaces
-
-        super(Interface, cls).__init_subclass_with_meta__(_meta=_meta, **options)
-
-    @classmethod
-    def resolve_type(cls, instance, info):
-        from .objecttype import ObjectType
-
-        if isinstance(instance, ObjectType):
-            return type(instance)
+        super(Interface, cls).__init_subclass_with_meta__(_meta=_meta, **
+            options)
 
     def __init__(self, *args, **kwargs):
-        raise Exception("An Interface cannot be initialized")
+        raise Exception('An Interface cannot be initialized')

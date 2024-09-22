@@ -1,16 +1,13 @@
 from typing import TYPE_CHECKING
-
 from .base import BaseOptions, BaseType
 from .unmountedtype import UnmountedType
-
-# For static type checking with type checker
 if TYPE_CHECKING:
-    from .objecttype import ObjectType  # NOQA
-    from typing import Iterable, Type  # NOQA
+    from .objecttype import ObjectType
+    from typing import Iterable, Type
 
 
 class UnionOptions(BaseOptions):
-    types = ()  # type: Iterable[Type[ObjectType]]
+    types = ()
 
 
 class Union(UnmountedType, BaseType):
@@ -52,10 +49,8 @@ class Union(UnmountedType, BaseType):
 
     @classmethod
     def __init_subclass_with_meta__(cls, types=None, **options):
-        assert (
-            isinstance(types, (list, tuple)) and len(types) > 0
-        ), f"Must provide types for Union {cls.__name__}."
-
+        assert isinstance(types, (list, tuple)) and len(types
+            ) > 0, f'Must provide types for Union {cls.__name__}.'
         _meta = UnionOptions(cls)
         _meta.types = types
         super(Union, cls).__init_subclass_with_meta__(_meta=_meta, **options)
@@ -66,11 +61,4 @@ class Union(UnmountedType, BaseType):
         This function is called when the unmounted type (Union instance)
         is mounted (as a Field, InputField or Argument)
         """
-        return cls
-
-    @classmethod
-    def resolve_type(cls, instance, info):
-        from .objecttype import ObjectType  # NOQA
-
-        if isinstance(instance, ObjectType):
-            return type(instance)
+        pass

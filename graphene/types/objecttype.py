@@ -1,48 +1,34 @@
 from typing import TYPE_CHECKING
-
 from .base import BaseOptions, BaseType, BaseTypeMeta
 from .field import Field
 from .interface import Interface
 from .utils import yank_fields_from_attrs
-
 try:
     from dataclasses import make_dataclass, field
 except ImportError:
-    from ..pyutils.dataclasses import make_dataclass, field  # type: ignore
-# For static type checking with type checker
+    from ..pyutils.dataclasses import make_dataclass, field
 if TYPE_CHECKING:
-    from typing import Dict, Iterable, Type  # NOQA
+    from typing import Dict, Iterable, Type
 
 
 class ObjectTypeOptions(BaseOptions):
-    fields = None  # type: Dict[str, Field]
-    interfaces = ()  # type: Iterable[Type[Interface]]
+    fields = None
+    interfaces = ()
 
 
 class ObjectTypeMeta(BaseTypeMeta):
-    def __new__(cls, name_, bases, namespace, **options):
-        # Note: it's safe to pass options as keyword arguments as they are still type-checked by ObjectTypeOptions.
 
-        # We create this type, to then overload it with the dataclass attrs
+    def __new__(cls, name_, bases, namespace, **options):
+
+
         class InterObjectType:
             pass
-
-        base_cls = super().__new__(
-            cls, name_, (InterObjectType,) + bases, namespace, **options
-        )
+        base_cls = super().__new__(cls, name_, (InterObjectType,) + bases,
+            namespace, **options)
         if base_cls._meta:
-            fields = [
-                (
-                    key,
-                    "typing.Any",
-                    field(
-                        default=field_value.default_value
-                        if isinstance(field_value, Field)
-                        else None
-                    ),
-                )
-                for key, field_value in base_cls._meta.fields.items()
-            ]
+            fields = [(key, 'typing.Any', field(default=field_value.
+                default_value if isinstance(field_value, Field) else None)) for
+                key, field_value in base_cls._meta.fields.items()]
             dataclass = make_dataclass(name_, fields, bases=())
             InterObjectType.__init__ = dataclass.__init__
             InterObjectType.__eq__ = dataclass.__eq__
@@ -123,30 +109,19 @@ class ObjectType(BaseType, metaclass=ObjectTypeMeta):
     """
 
     @classmethod
-    def __init_subclass_with_meta__(
-        cls,
-        interfaces=(),
-        possible_types=(),
-        default_resolver=None,
-        _meta=None,
-        **options,
-    ):
+    def __init_subclass_with_meta__(cls, interfaces=(), possible_types=(),
+        default_resolver=None, _meta=None, **options):
         if not _meta:
             _meta = ObjectTypeOptions(cls)
         fields = {}
-
         for interface in interfaces:
-            assert issubclass(
-                interface, Interface
-            ), f'All interfaces of {cls.__name__} must be a subclass of Interface. Received "{interface}".'
+            assert issubclass(interface, Interface
+                ), f'All interfaces of {cls.__name__} must be a subclass of Interface. Received "{interface}".'
             fields.update(interface._meta.fields)
         for base in reversed(cls.__mro__):
             fields.update(yank_fields_from_attrs(base.__dict__, _as=Field))
-        assert not (possible_types and cls.is_type_of), (
-            f"{cls.__name__}.Meta.possible_types will cause type collision with {cls.__name__}.is_type_of. "
-            "Please use one or other."
-        )
-
+        assert not (possible_types and cls.is_type_of
+            ), f'{cls.__name__}.Meta.possible_types will cause type collision with {cls.__name__}.is_type_of. Please use one or other.'
         if _meta.fields:
             _meta.fields.update(fields)
         else:
@@ -155,7 +130,6 @@ class ObjectType(BaseType, metaclass=ObjectTypeMeta):
             _meta.interfaces = interfaces
         _meta.possible_types = possible_types
         _meta.default_resolver = default_resolver
-
-        super(ObjectType, cls).__init_subclass_with_meta__(_meta=_meta, **options)
-
+        super(ObjectType, cls).__init_subclass_with_meta__(_meta=_meta, **
+            options)
     is_type_of = None

@@ -1,20 +1,15 @@
 from typing import Type
-
 from ..utils.subclass_with_meta import SubclassWithMeta, SubclassWithMeta_Meta
 from ..utils.trim_docstring import trim_docstring
 
 
 class BaseOptions:
-    name = None  # type: str
-    description = None  # type: str
-
-    _frozen = False  # type: bool
+    name = None
+    description = None
+    _frozen = False
 
     def __init__(self, class_type):
-        self.class_type = class_type  # type: Type
-
-    def freeze(self):
-        self._frozen = True
+        self.class_type = class_type
 
     def __setattr__(self, name, value):
         if not self._frozen:
@@ -23,22 +18,18 @@ class BaseOptions:
             raise Exception(f"Can't modify frozen Options {self}")
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} name={repr(self.name)}>"
+        return f'<{self.__class__.__name__} name={repr(self.name)}>'
 
 
 BaseTypeMeta = SubclassWithMeta_Meta
 
 
 class BaseType(SubclassWithMeta):
-    @classmethod
-    def create_type(cls, class_name, **options):
-        return type(class_name, (cls,), {"Meta": options})
 
     @classmethod
-    def __init_subclass_with_meta__(
-        cls, name=None, description=None, _meta=None, **_kwargs
-    ):
-        assert "_meta" not in cls.__dict__, "Can't assign meta directly"
+    def __init_subclass_with_meta__(cls, name=None, description=None, _meta
+        =None, **_kwargs):
+        assert '_meta' not in cls.__dict__, "Can't assign meta directly"
         if not _meta:
             return
         _meta.name = name or cls.__name__

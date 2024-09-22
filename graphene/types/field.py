@@ -1,7 +1,6 @@
 import inspect
 from collections.abc import Mapping
 from functools import partial
-
 from .argument import Argument, to_arguments
 from .mountedtype import MountedType
 from .resolver import default_resolver
@@ -9,15 +8,7 @@ from .structures import NonNull
 from .unmountedtype import UnmountedType
 from .utils import get_type
 from ..utils.deprecated import warn_deprecation
-
 base_type = type
-
-
-def source_resolver(source, root, info, **args):
-    resolved = default_resolver(source, None, root, info, **args)
-    if inspect.isfunction(resolved) or inspect.ismethod(resolved):
-        return resolved()
-    return resolved
 
 
 class Field(MountedType):
@@ -63,44 +54,24 @@ class Field(MountedType):
             additional arguments to mount on the field.
     """
 
-    def __init__(
-        self,
-        type_,
-        args=None,
-        resolver=None,
-        source=None,
-        deprecation_reason=None,
-        name=None,
-        description=None,
-        required=False,
-        _creation_counter=None,
-        default_value=None,
-        **extra_args,
-    ):
+    def __init__(self, type_, args=None, resolver=None, source=None,
+        deprecation_reason=None, name=None, description=None, required=
+        False, _creation_counter=None, default_value=None, **extra_args):
         super(Field, self).__init__(_creation_counter=_creation_counter)
-        assert not args or isinstance(
-            args, Mapping
-        ), f'Arguments in a field have to be a mapping, received "{args}".'
-        assert not (
-            source and resolver
-        ), "A Field cannot have a source and a resolver in at the same time."
-        assert not callable(
-            default_value
-        ), f'The default value can not be a function but received "{base_type(default_value)}".'
-
+        assert not args or isinstance(args, Mapping
+            ), f'Arguments in a field have to be a mapping, received "{args}".'
+        assert not (source and resolver
+            ), 'A Field cannot have a source and a resolver in at the same time.'
+        assert not callable(default_value
+            ), f'The default value can not be a function but received "{base_type(default_value)}".'
         if required:
             type_ = NonNull(type_)
-
-        # Check if name is actually an argument of the field
         if isinstance(name, (Argument, UnmountedType)):
-            extra_args["name"] = name
+            extra_args['name'] = name
             name = None
-
-        # Check if source is actually an argument of the field
         if isinstance(source, (Argument, UnmountedType)):
-            extra_args["source"] = source
+            extra_args['source'] = source
             source = None
-
         self.name = name
         self._type = type_
         self.args = to_arguments(args or {}, extra_args)
@@ -110,11 +81,6 @@ class Field(MountedType):
         self.deprecation_reason = deprecation_reason
         self.description = description
         self.default_value = default_value
-
-    @property
-    def type(self):
-        return get_type(self._type)
-
     get_resolver = None
 
     def wrap_resolve(self, parent_resolver):
@@ -122,17 +88,11 @@ class Field(MountedType):
         Wraps a function resolver, using the ObjectType resolve_{FIELD_NAME}
         (parent_resolver) if the Field definition has no resolver.
         """
-        if self.get_resolver is not None:
-            warn_deprecation(
-                "The get_resolver method is being deprecated, please rename it to wrap_resolve."
-            )
-            return self.get_resolver(parent_resolver)
-
-        return self.resolver or parent_resolver
+        pass
 
     def wrap_subscribe(self, parent_subscribe):
         """
         Wraps a function subscribe, using the ObjectType subscribe_{FIELD_NAME}
         (parent_subscribe) if the Field definition has no subscribe.
         """
-        return parent_subscribe
+        pass

@@ -1,6 +1,5 @@
 import inspect
 from functools import partial
-
 from .mountedtype import MountedType
 
 
@@ -15,8 +14,3 @@ class Dynamic(MountedType):
         assert inspect.isfunction(type_) or isinstance(type_, partial)
         self.type = type_
         self.with_schema = with_schema
-
-    def get_type(self, schema=None):
-        if schema and self.with_schema:
-            return self.type(schema=schema)
-        return self.type()
