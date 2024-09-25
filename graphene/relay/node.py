@@ -10,7 +10,11 @@ def is_node(objecttype):
     """
     Check if the given objecttype has Node as an interface
     """
-    pass
+    return issubclass(objecttype, Node) or (
+        isclass(objecttype)
+        and issubclass(objecttype, ObjectType)
+        and any(issubclass(i, Node) for i in objecttype._meta.interfaces)
+    )
 
 
 class GlobalID(Field):
@@ -33,6 +37,9 @@ class NodeField(Field):
         super(NodeField, self).__init__(type_ or node, id=global_id_type.
             graphene_type(required=True, description='The ID of the object'
             ), **kwargs)
+
+    def get_resolver(self, parent_resolver):
+        return partial(self.node_type.node_resolver, get_node=self.node_type.get_node_from_global_id)
 
 
 class AbstractNode(Interface):
