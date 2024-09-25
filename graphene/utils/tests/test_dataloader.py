@@ -450,3 +450,50 @@ async def test_dataloader_clear_with_missing_key_works():
 
     a_loader, a_load_calls = id_loader(resolve=do_resolve)
     assert a_loader.clear("A1") == a_loader
+
+@mark.asyncio
+async def test_load_many_with_invalid_input():
+    identity_loader, _ = id_loader()
+    with raises(TypeError):
+        await identity_loader.load_many("not_an_iterable")
+
+@mark.asyncio
+async def test_load_with_none_key():
+    identity_loader, _ = id_loader()
+    with raises(ValueError):
+        await identity_loader.load(None)
+
+@mark.asyncio
+async def test_prime_and_clear():
+    identity_loader, load_calls = id_loader()
+    
+    identity_loader.prime("A", "A_value")
+    identity_loader.prime("B", "B_value")
+    
+    a = await identity_loader.load("A")
+    assert a == "A_value"
+    assert load_calls == []
+    
+    identity_loader.clear("A")
+    
+    a_reloaded = await identity_loader.load("A")
+    b = await identity_loader.load("B")
+    
+    assert a_reloaded == "A"
+    assert b == "B_value"
+    assert load_calls == [["A"]]
+
+@mark.asyncio
+async def test_clear_all():
+    identity_loader, load_calls = id_loader()
+    
+    identity_loader.prime("A", "A_value")
+    identity_loader.prime("B", "B_value")
+    
+    identity_loader.clear_all()
+    
+    a, b = await gather(identity_loader.load("A"), identity_loader.load("B"))
+    
+    assert a == "A"
+    assert b == "B"
+    assert load_calls == [["A", "B"]]
