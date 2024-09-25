@@ -80,4 +80,4 @@ class Enum(UnmountedType, BaseType, metaclass=EnumMeta):
         This function is called when the unmounted type (Enum instance)
         is mounted (as a Field, InputField or Argument)
         """
-        pass
+        return cls
