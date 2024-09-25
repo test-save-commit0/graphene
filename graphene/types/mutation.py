@@ -107,4 +107,12 @@ Read more: https://github.com/graphql-python/graphene/blob/v2.0.0/UPGRADE-v2.0.m
     def Field(cls, name=None, description=None, deprecation_reason=None,
         required=False):
         """Mount instance of mutation Field."""
-        pass
+        return Field(
+            cls._meta.output,
+            args=cls._meta.arguments,
+            resolver=cls._meta.resolver,
+            name=name,
+            description=description or cls._meta.description,
+            deprecation_reason=deprecation_reason,
+            required=required
+        )
