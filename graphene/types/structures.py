@@ -24,7 +24,7 @@ class Structure(UnmountedType):
         This function is called when the unmounted type (List or NonNull instance)
         is mounted (as a Field, InputField or Argument)
         """
-        pass
+        return get_type(self._of_type)
 
 
 class List(Structure):
@@ -50,6 +50,9 @@ class List(Structure):
     def __eq__(self, other):
         return isinstance(other, List) and (self.of_type == other.of_type and
             self.args == other.args and self.kwargs == other.kwargs)
+
+    def get_type(self):
+        return List(get_type(self._of_type))
 
 
 class NonNull(Structure):
@@ -87,3 +90,6 @@ class NonNull(Structure):
         return isinstance(other, NonNull) and (self.of_type == other.
             of_type and self.args == other.args and self.kwargs == other.kwargs
             )
+
+    def get_type(self):
+        return NonNull(get_type(self._of_type))
