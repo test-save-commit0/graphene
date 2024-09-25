@@ -43,7 +43,15 @@ class TypeMap(dict):
     def get_function_for_type(self, graphene_type, func_name, name,
         default_value):
         """Gets a resolve or subscribe function for a given ObjectType"""
-        pass
+        if isinstance(graphene_type, ObjectType):
+            func = getattr(graphene_type, func_name, None)
+            if func:
+                return func
+        if isinstance(graphene_type, type):
+            func = getattr(graphene_type, func_name, None)
+            if func:
+                return get_unbound_function(func)
+        return default_value
 
 
 class Schema:
@@ -117,19 +125,29 @@ class Schema:
         Returns:
             :obj:`ExecutionResult` containing any data and errors for the operation.
         """
-        pass
+        kwargs = normalize_execute_kwargs(kwargs)
+        return graphql_sync(self.graphql_schema, *args, **kwargs)
 
     async def execute_async(self, *args, **kwargs):
         """Execute a GraphQL query on the schema asynchronously.
         Same as `execute`, but uses `graphql` instead of `graphql_sync`.
         """
-        pass
+        kwargs = normalize_execute_kwargs(kwargs)
+        return await graphql(self.graphql_schema, *args, **kwargs)
 
     async def subscribe(self, query, *args, **kwargs):
         """Execute a GraphQL subscription on the schema asynchronously."""
-        pass
+        kwargs = normalize_execute_kwargs(kwargs)
+        document = parse(query)
+        return await subscribe(self.graphql_schema, document, *args, **kwargs)
 
 
 def normalize_execute_kwargs(kwargs):
     """Replace alias names in keyword arguments for graphql()"""
-    pass
+    if 'request_string' in kwargs:
+        kwargs['source'] = kwargs.pop('request_string')
+    if 'context_value' in kwargs:
+        kwargs['context'] = kwargs.pop('context_value')
+    if 'variable_values' in kwargs:
+        kwargs['variables'] = kwargs.pop('variable_values')
+    return kwargs
