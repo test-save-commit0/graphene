@@ -88,11 +88,23 @@ class Field(MountedType):
         Wraps a function resolver, using the ObjectType resolve_{FIELD_NAME}
         (parent_resolver) if the Field definition has no resolver.
         """
-        pass
+        def resolver(obj, info, **args):
+            if self.resolver:
+                return self.resolver(obj, info, **args)
+            elif parent_resolver:
+                return parent_resolver(obj, info, **args)
+            return default_resolver(obj, info, **args)
+        return resolver
 
     def wrap_subscribe(self, parent_subscribe):
         """
         Wraps a function subscribe, using the ObjectType subscribe_{FIELD_NAME}
         (parent_subscribe) if the Field definition has no subscribe.
         """
-        pass
+        def subscriber(obj, info, **args):
+            if hasattr(self, 'subscribe'):
+                return self.subscribe(obj, info, **args)
+            elif parent_subscribe:
+                return parent_subscribe(obj, info, **args)
+            return None
+        return subscriber
