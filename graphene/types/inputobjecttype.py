@@ -24,7 +24,8 @@ def set_input_object_type_default_value(default_value):
     This function should be called at the beginning of the app or in some other place where it is guaranteed to
     be called before any InputObjectType is defined.
     """
-    pass
+    global _INPUT_OBJECT_TYPE_DEFAULT_VALUE
+    _INPUT_OBJECT_TYPE_DEFAULT_VALUE = default_value
 
 
 class InputObjectTypeContainer(dict, BaseType):
@@ -103,4 +104,4 @@ class InputObjectType(UnmountedType, BaseType):
         This function is called when the unmounted type (InputObjectType instance)
         is mounted (as a Field, InputField or Argument)
         """
-        pass
+        return cls
