@@ -19,24 +19,42 @@ class GrapheneGraphQLType:
 
 
 class GrapheneInterfaceType(GrapheneGraphQLType, GraphQLInterfaceType):
-    pass
+    def __copy__(self):
+        result = GrapheneInterfaceType(graphene_type=self.graphene_type)
+        result.__dict__.update(self.__dict__)
+        return result
 
 
 class GrapheneUnionType(GrapheneGraphQLType, GraphQLUnionType):
-    pass
+    def __copy__(self):
+        result = GrapheneUnionType(graphene_type=self.graphene_type)
+        result.__dict__.update(self.__dict__)
+        return result
 
 
 class GrapheneObjectType(GrapheneGraphQLType, GraphQLObjectType):
-    pass
+    def __copy__(self):
+        result = GrapheneObjectType(graphene_type=self.graphene_type)
+        result.__dict__.update(self.__dict__)
+        return result
 
 
 class GrapheneScalarType(GrapheneGraphQLType, GraphQLScalarType):
-    pass
+    def __copy__(self):
+        result = GrapheneScalarType(graphene_type=self.graphene_type)
+        result.__dict__.update(self.__dict__)
+        return result
 
 
 class GrapheneEnumType(GrapheneGraphQLType, GraphQLEnumType):
-    pass
+    def __copy__(self):
+        result = GrapheneEnumType(graphene_type=self.graphene_type)
+        result.__dict__.update(self.__dict__)
+        return result
 
 
 class GrapheneInputObjectType(GrapheneGraphQLType, GraphQLInputObjectType):
-    pass
+    def __copy__(self):
+        result = GrapheneInputObjectType(graphene_type=self.graphene_type)
+        result.__dict__.update(self.__dict__)
+        return result
