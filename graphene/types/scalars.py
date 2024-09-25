@@ -32,23 +32,53 @@ class Scalar(UnmountedType, BaseType):
         This function is called when the unmounted type (Scalar instance)
         is mounted (as a Field, InputField or Argument)
         """
-        pass
+        from graphql import GraphQLScalarType
+
+        return GraphQLScalarType(
+            name=cls._meta.name,
+            description=cls._meta.description,
+            serialize=cls.serialize,
+            parse_value=cls.parse_value,
+            parse_literal=cls.parse_literal,
+        )
 
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648
 
 
+def coerce_int(value):
+    if isinstance(value, bool):
+        return 1 if value else 0
+    try:
+        int_value = int(value)
+        if MIN_INT <= int_value <= MAX_INT:
+            return int_value
+    except (TypeError, ValueError):
+        pass
+    raise ValueError(f"Int cannot represent non 32-bit signed integer value: {value}")
+
 class Int(Scalar):
     """
     The `Int` scalar type represents non-fractional signed whole numeric
-    values. Int can represent values between -(2^53 - 1) and 2^53 - 1 since
+    values. Int can represent values between -(2^31) and 2^31 - 1 since
     represented in JSON as double-precision floating point numbers specified
     by [IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point).
     """
     serialize = coerce_int
     parse_value = coerce_int
 
+    @classmethod
+    def parse_literal(cls, node):
+        if isinstance(node, IntValueNode):
+            return coerce_int(node.value)
+
+
+def coerce_big_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"BigInt cannot represent non-integer value: {value}")
 
 class BigInt(Scalar):
     """
@@ -56,9 +86,19 @@ class BigInt(Scalar):
     `BigInt` is not constrained to 32-bit like the `Int` type and thus is a less
     compatible type.
     """
-    serialize = coerce_int
-    parse_value = coerce_int
+    serialize = coerce_big_int
+    parse_value = coerce_big_int
 
+    @classmethod
+    def parse_literal(cls, node):
+        if isinstance(node, IntValueNode):
+            return coerce_big_int(node.value)
+
+def coerce_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"Float cannot represent non numeric value: {value}")
 
 class Float(Scalar):
     """
@@ -69,6 +109,21 @@ class Float(Scalar):
     serialize = coerce_float
     parse_value = coerce_float
 
+    @classmethod
+    def parse_literal(cls, node):
+        if isinstance(node, (FloatValueNode, IntValueNode)):
+            return coerce_float(node.value)
+
+def coerce_string(value):
+    if isinstance(value, str):
+        return value
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int) or isinstance(value, float):
+        return str(value)
+    if isinstance(value, dict) or isinstance(value, list):
+        raise ValueError(f"String cannot represent value: {value}")
+    return str(value)
 
 class String(Scalar):
     """
@@ -79,6 +134,11 @@ class String(Scalar):
     serialize = coerce_string
     parse_value = coerce_string
 
+    @classmethod
+    def parse_literal(cls, node):
+        if isinstance(node, StringValueNode):
+            return node.value
+
 
 class Boolean(Scalar):
     """
@@ -87,6 +147,10 @@ class Boolean(Scalar):
     serialize = bool
     parse_value = bool
 
+    @classmethod
+    def parse_literal(cls, node):
+        if isinstance(node, BooleanValueNode):
+            return node.value
 
 class ID(Scalar):
     """
@@ -98,3 +162,8 @@ class ID(Scalar):
     """
     serialize = str
     parse_value = str
+
+    @classmethod
+    def parse_literal(cls, node):
+        if isinstance(node, (StringValueNode, IntValueNode)):
+            return node.value
