@@ -119,7 +119,9 @@ def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
 
     It is an error to specify both default and default_factory.
     """
-    pass
+    if default is not MISSING and default_factory is not MISSING:
+        raise ValueError('cannot specify both default and default_factory')
+    return Field(default, default_factory, init, repr, hash, compare, metadata)
 
 
 _hash_action = {(False, False, False, False): None, (False, False, False, 
@@ -146,7 +148,13 @@ def dataclass(_cls=None, *, init=True, repr=True, eq=True, order=False,
     __hash__() method function is added. If frozen is true, fields may
     not be assigned to after instance creation.
     """
-    pass
+    def wrap(cls):
+        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen)
+
+    if _cls is None:
+        return wrap
+
+    return wrap(_cls)
 
 
 def fields(class_or_instance):
@@ -155,18 +163,23 @@ def fields(class_or_instance):
     Accepts a dataclass or an instance of one. Tuple elements are of
     type Field.
     """
-    pass
+    if isinstance(class_or_instance, type):
+        return getattr(class_or_instance, _FIELDS).values()
+    elif isinstance(class_or_instance, object):
+        return fields(class_or_instance.__class__)
+    else:
+        raise TypeError('Argument must be a dataclass type or instance')
 
 
 def _is_dataclass_instance(obj):
     """Returns True if obj is an instance of a dataclass."""
-    pass
+    return hasattr(obj, _FIELDS)
 
 
 def is_dataclass(obj):
     """Returns True if obj is a dataclass or an instance of a
     dataclass."""
-    pass
+    return isinstance(obj, type) and hasattr(obj, _FIELDS) or _is_dataclass_instance(obj)
 
 
 def asdict(obj, *, dict_factory=dict):
@@ -188,7 +201,23 @@ def asdict(obj, *, dict_factory=dict):
     dataclass instances. This will also look into built-in containers:
     tuples, lists, and dicts.
     """
-    pass
+    def _asdict_inner(obj):
+        if _is_dataclass_instance(obj):
+            result = []
+            for f in fields(obj):
+                value = _asdict_inner(getattr(obj, f.name))
+                result.append((f.name, value))
+            return dict_factory(result)
+        elif isinstance(obj, (list, tuple)):
+            return type(obj)(_asdict_inner(v) for v in obj)
+        elif isinstance(obj, dict):
+            return type(obj)((_asdict_inner(k), _asdict_inner(v)) for k, v in obj.items())
+        else:
+            return copy.deepcopy(obj)
+    
+    if not _is_dataclass_instance(obj):
+        raise TypeError("asdict() should be called on dataclass instances")
+    return _asdict_inner(obj)
 
 
 def astuple(obj, *, tuple_factory=tuple):
@@ -209,7 +238,23 @@ def astuple(obj, *, tuple_factory=tuple):
     dataclass instances. This will also look into built-in containers:
     tuples, lists, and dicts.
     """
-    pass
+    def _astuple_inner(obj):
+        if _is_dataclass_instance(obj):
+            result = []
+            for f in fields(obj):
+                value = _astuple_inner(getattr(obj, f.name))
+                result.append(value)
+            return tuple_factory(result)
+        elif isinstance(obj, (list, tuple)):
+            return type(obj)(_astuple_inner(v) for v in obj)
+        elif isinstance(obj, dict):
+            return type(obj)((_astuple_inner(k), _astuple_inner(v)) for k, v in obj.items())
+        else:
+            return copy.deepcopy(obj)
+    
+    if not _is_dataclass_instance(obj):
+        raise TypeError("astuple() should be called on dataclass instances")
+    return _astuple_inner(obj)
 
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
@@ -236,7 +281,29 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     The parameters init, repr, eq, order, unsafe_hash, and frozen are passed to
     dataclass().
     """
-    pass
+    if namespace is None:
+        namespace = {}
+    else:
+        namespace = namespace.copy()
+
+    anns = {}
+    for item in fields:
+        if isinstance(item, str):
+            anns[item] = 'typing.Any'
+        elif len(item) == 2:
+            name, tp = item
+            anns[name] = tp
+        elif len(item) == 3:
+            name, tp, spec = item
+            anns[name] = tp
+            namespace[name] = spec
+        else:
+            raise TypeError(f'Invalid field specification: {item}')
+
+    namespace['__annotations__'] = anns
+    cls = type(cls_name, bases, namespace)
+    return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
+                     unsafe_hash=unsafe_hash, frozen=frozen)
 
 
 def replace(obj, **changes):
@@ -253,4 +320,14 @@ def replace(obj, **changes):
       c1 = replace(c, x=3)
       assert c1.x == 3 and c1.y == 2
     """
-    pass
+    if not _is_dataclass_instance(obj):
+        raise TypeError("replace() should be called on dataclass instances")
+    
+    # Create a dict of the original values
+    original_dict = asdict(obj)
+    
+    # Update with the new values
+    original_dict.update(changes)
+    
+    # Create a new instance with the updated values
+    return obj.__class__(**original_dict)
