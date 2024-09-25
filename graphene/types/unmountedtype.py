@@ -49,25 +49,28 @@ class UnmountedType(OrderedType):
         This function is called when the UnmountedType instance
         is mounted (as a Field, InputField or Argument)
         """
-        pass
+        return self.__class__
 
     def Field(self):
         """
         Mount the UnmountedType as Field
         """
-        pass
+        from .field import Field
+        return Field(self.get_type(), *self.args, **self.kwargs)
 
     def InputField(self):
         """
         Mount the UnmountedType as InputField
         """
-        pass
+        from .inputfield import InputField
+        return InputField(self.get_type(), *self.args, **self.kwargs)
 
     def Argument(self):
         """
         Mount the UnmountedType as Argument
         """
-        pass
+        from .argument import Argument
+        return Argument(self.get_type(), *self.args, **self.kwargs)
 
     def __eq__(self, other):
         return self is other or isinstance(other, UnmountedType
